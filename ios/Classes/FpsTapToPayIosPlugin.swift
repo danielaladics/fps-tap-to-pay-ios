@@ -45,6 +45,13 @@ public class FpsTapToPayIosPlugin: NSObject, FlutterPlugin {
           let discovery = ProximityReaderDiscovery()
           let content = try await discovery.content(for: ProximityReaderDiscovery.Topic.payment(.howToTap))
           try await discovery.presentContent(content, from: presenter)
+          // Only report back once the education sheet is closed, so the caller
+          // can safely continue (for example with the payment screen).
+          var waited = 0
+          while presenter.presentedViewController != nil && waited < 1200 {
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            waited += 1
+          }
           result(true)
         } catch {
           result(FlutterError(code: "education_failed", message: error.localizedDescription, details: nil))
